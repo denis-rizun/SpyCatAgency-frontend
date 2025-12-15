@@ -1,0 +1,35 @@
+FROM node:20-slim
+
+RUN useradd -m -s /bin/bash frontend-user
+
+WORKDIR /app
+
+COPY ../../package.json ../../package-lock.json /app/
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    && npm ci \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ../../app/ /app/app/
+COPY ../../components/ /app/components/
+COPY ../../hooks/ /app/hooks/
+COPY ../../lib/ /app/lib/
+COPY ../../services/ /app/services/
+COPY ../../types/ /app/types/
+COPY ../../next.config.js /app/next.config.js
+COPY ../../next-env.d.ts /app/next-env.d.ts
+COPY ../../postcss.config.js /app/postcss.config.js
+COPY ../../tailwind.config.ts /app/tailwind.config.ts
+COPY ../../tsconfig.json /app/tsconfig.json
+COPY ../../.dockerignore /app/.dockerignore
+COPY deploy/entrypoints/frontend-entrypoint.sh /app/entrypoint.sh
+
+RUN npm run build \
+    && chmod +x /app/entrypoint.sh
+
+USER frontend-user
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
